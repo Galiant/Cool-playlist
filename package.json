@@ -12,5 +12,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "devDependencies": {
+    "eslint-config-rallycoding": "^3.2.0",
+    "eslint-plugin-jsx-a11y": "^2.2.3"
   }
 }
