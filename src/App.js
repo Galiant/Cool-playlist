@@ -5,6 +5,7 @@ import queryString from "query-string";
 const defaultStyle = {
   color: "#fff"
 };
+
 const fakeServerData = {
   user: {
     name: "Antonijo",
@@ -57,7 +58,10 @@ class PlaylistCounter extends Component {
 
 class HoursCounter extends Component {
   render() {
-    const allSongs = this.props.playlists.reduce((songs, eachPlaylist) => songs.concat(eachPlaylist.songs), []);
+    const allSongs = this.props.playlists.reduce(
+      (songs, eachPlaylist) => songs.concat(eachPlaylist.songs),
+      []
+    );
     const totalDuration = allSongs.reduce((sum, eachSong) => sum + eachSong.duration, 0);
     return (
       <div style={{ ...defaultStyle, width: "40%", display: "inline-block" }}>
@@ -83,7 +87,7 @@ class Playlist extends Component {
     const playlist = this.props.playlist;
     return (
       <div style={{ ...defaultStyle, display: "inline-block", width: "25%" }}>
-        <img src={playlist.imageUrl} style={{ width: "60px" }} />
+        <img />
         <h3>{playlist.name}</h3>
         <ul>{playlist.songs.map((song) => <li>{song.name}</li>)}</ul>
       </div>
@@ -102,57 +106,52 @@ class App extends Component {
   componentDidMount() {
     const parsed = queryString.parse(window.location.search);
     const accessToken = parsed.access_token;
+    if (!accessToken) return;
 
-    fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    })
-      .then((response) => response.json())
-      .then((data) =>
-        this.setState({
-          user: {
-            name: data.display_name
-          }
-        })
-      );
+    // fetch("https://api.spotify.com/v1/me", {
+    //   headers: {
+    //     Authorization: `Bearer ${accessToken}`
+    //   }
+    // })
+    //   .then((response) => response.json())
+    //   .then((data) => this.setState({ serverData: { user: { name: data.display_name } } }));
 
     fetch("https://api.spotify.com/v1/me/playlists", {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
     })
       .then((response) => response.json())
       .then((data) =>
         this.setState({
-          playlists: data.items.map((item) => {
-            console.log(data.items);
-            return {
-              name: item.name,
-              imageUrl: item.images[0].url,
-              songs: []
-            };
-          })
+          serverData: {
+            user: {
+              playlists: data.items.map((item) => ({
+                name: item.name,
+                songs: []
+              }))
+            }
+          }
         })
       );
   }
   render() {
     const playlistToRender =
-      this.state.user && this.state.playlists
-        ? this.state.playlists.filter((playlist) =>
-            playlist.name.toLowerCase().includes(this.state.filterString.toLowerCase())
+      this.state.serverData.user && this.state.serverData.user.playlists
+        ? this.state.serverData.user.playlists.filter((playlist) =>
+            playlist.name.toLowerCase().includes(this.state.filterString)
           )
         : [];
     return (
       <div className="App">
-        {this.state.user ? (
+        {this.state.serverData.user ? (
           <div>
             <h1 style={{ ...defaultStyle, "font-size": "54px" }}>
-              {this.state.user.name}'s Playlists
+              {this.state.serverData.user.name}'s Playlist
             </h1>
             <PlaylistCounter playlists={playlistToRender} />
             <HoursCounter playlists={playlistToRender} />
-            <Filter
-              onTextChange={(text) => {
-                this.setState({ filterString: text });
-              }}
-            />
+            <Filter onTextChange={(text) => this.setState({ filterString: text })} />
             {playlistToRender.map((playlist) => <Playlist playlist={playlist} />)}
           </div>
         ) : (
