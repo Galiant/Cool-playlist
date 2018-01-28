@@ -156,7 +156,11 @@ class App extends Component {
           </div>
         ) : (
           <button
-            onClick={() => (window.location = "http://localhost:8888/login")}
+            onClick={() => {
+              window.location = window.location.includes("localhost")
+                ? "http://localhost:8888/login"
+                : "https://cool-playlist.herokuapp.com/login";
+            }}
             style={{ padding: "20px", "font-size": "50px", "margin-top": "20px" }}
           >
             Sign in with Spotify
