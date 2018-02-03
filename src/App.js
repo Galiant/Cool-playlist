@@ -87,7 +87,7 @@ class Playlist extends Component {
     const playlist = this.props.playlist;
     return (
       <div style={{ ...defaultStyle, display: "inline-block", width: "25%" }}>
-        <img />
+        <img src={playlist.imageUrl} style={{ width: "60px" }} />
         <h3>{playlist.name}</h3>
         <ul>{playlist.songs.map((song) => <li>{song.name}</li>)}</ul>
       </div>
@@ -108,15 +108,7 @@ class App extends Component {
     const accessToken = parsed.access_token;
     if (!accessToken) return;
 
-    // fetch("https://api.spotify.com/v1/me", {
-    //   headers: {
-    //     Authorization: `Bearer ${accessToken}`
-    //   }
-    // })
-    //   .then((response) => response.json())
-    //   .then((data) => this.setState({ serverData: { user: { name: data.display_name } } }));
-
-    fetch("https://api.spotify.com/v1/me/playlists", {
+    fetch("https://api.spotify.com/v1/me", {
       headers: {
         Authorization: `Bearer ${accessToken}`
       }
@@ -124,14 +116,52 @@ class App extends Component {
       .then((response) => response.json())
       .then((data) =>
         this.setState({
-          serverData: {
-            user: {
-              playlists: data.items.map((item) => ({
-                name: item.name,
-                songs: []
-              }))
-            }
+          user: {
+            name: data.display_name
           }
+        })
+      );
+
+    fetch("https://api.spotify.com/v1/me/playlists", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    })
+      .then((response) => response.json())
+      .then((playlistData) => {
+        const playlists = playlistData.items;
+        const trackDataPromises = playlists.map((playlist) => {
+          const responsePromise = fetch(playlist.tracks.href, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          });
+          const trackDataPromise = responsePromise.then((response) => response.json());
+          return trackDataPromise;
+        });
+        const allTracksDataPromises = Promise.all(trackDataPromises);
+        const playlistPromise = allTracksDataPromises.then((trackDatas) => {
+          trackDatas.forEach((trackData, i) => {
+            playlists[i].trackDatas = trackData.items
+              .map((item) => item.track)
+              .map((trackData) => ({
+                name: trackData.name,
+                duration: trackData.duration_ms / 1000
+              }));
+          });
+          return playlists;
+        });
+        return playlistPromise;
+      })
+      .then((playlists) =>
+        this.setState({
+          playlists: playlists.map((item) => ({
+            name: item.name,
+            imageUrl: item.images[0].url,
+            songs: item.trackDatas.slice(0, 3).map((trackData) => ({
+              name: trackData.name
+            }))
+          }))
         })
       );
   }
