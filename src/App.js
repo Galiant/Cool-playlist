@@ -158,9 +158,7 @@ class App extends Component {
           playlists: playlists.map((item) => ({
             name: item.name,
             imageUrl: item.images[0].url,
-            songs: item.trackDatas.slice(0, 3).map((trackData) => ({
-              name: trackData.name
-            }))
+            songs: item.trackDatas.slice(0, 3)
           }))
         })
       );
@@ -168,9 +166,15 @@ class App extends Component {
   render() {
     const playlistToRender =
       this.state.serverData.user && this.state.serverData.user.playlists
-        ? this.state.serverData.user.playlists.filter((playlist) =>
-            playlist.name.toLowerCase().includes(this.state.filterString)
-          )
+        ? this.state.serverData.user.playlists.filter((playlist) => {
+            const matchesPlaylist = playlist.name
+              .toLowerCase()
+              .includes(this.state.filterString.toLowerCase());
+            const matchesSong = playlist.songs.find((song) =>
+              song.name.toLowerCase().includes(this.state.filterString.toLowerCase())
+            );
+            return matchesPlaylist || matchesSong;
+          })
         : [];
     return (
       <div className="App">
